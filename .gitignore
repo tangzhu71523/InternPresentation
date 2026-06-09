@@ -6,5 +6,6 @@
 !prototypes/
 !prototypes/**
 
-!elements/
-!elements/**
+!asset/
+!asset/Slide1Use/
+!asset/Slide1Use/**

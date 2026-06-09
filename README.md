@@ -4,7 +4,7 @@ Sanitized upload version for the internship presentation web prototype.
 
 Included:
 - `prototypes/`: interactive prototype pages.
-- `elements/`: generated visual assets required by the prototype.
+- `asset/Slide1Use/`: generated visual assets required by the prototype.
 
 Excluded:
 - company profile pages

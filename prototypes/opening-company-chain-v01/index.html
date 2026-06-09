@@ -17,6 +17,15 @@
 
     * {
       box-sizing: border-box;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+
+    img,
+    svg,
+    canvas {
+      -webkit-user-drag: none;
+      user-drag: none;
     }
 
     html {
@@ -67,7 +76,7 @@
       inset: -3vh -3vw;
       background-image:
         linear-gradient(90deg, rgba(2, 18, 32, .08), rgba(2, 18, 32, .08)),
-        url("../../elements/company-building-2d.png");
+        url("../../asset/Slide1Use/company-building-2d.png");
       background-size: cover;
       background-position: 50% 50%;
       transform: scale(1.015);
@@ -274,7 +283,7 @@
 
     .cargo-open-door {
       position: absolute;
-      left: -25.5%;
+      left: -20.5%;
       top: 39%;
       width: 28%;
       height: 58%;
@@ -282,8 +291,7 @@
       display: block;
       object-fit: fill;
       opacity: 0;
-      transform: translate3d(10px, 0, 0);
-      transition: opacity 220ms ease, transform 320ms cubic-bezier(.22, .8, .18, 1);
+      transform: translate3d(0, 0, 0);
       pointer-events: none;
     }
 
@@ -293,6 +301,7 @@
     }
 
     .cargo-title {
+      display: none;
       position: absolute;
       left: 50%;
       top: 68%;
@@ -322,6 +331,7 @@
     }
 
     .cargo-detail {
+      display: none;
       position: absolute;
       right: 8%;
       bottom: 24%;
@@ -417,7 +427,7 @@
       position: absolute;
       inset: -3vh -3vw;
       z-index: 1;
-      background-image: url("../../elements/company_building_no_shadow.png");
+      background-image: url("../../asset/Slide1Use/company_building_no_shadow.png");
       background-size: cover;
       background-position: 50% 50%;
       opacity: .11;
@@ -476,7 +486,7 @@
       z-index: 3;
       background-image:
         linear-gradient(90deg, rgba(2, 18, 32, .08), rgba(2, 18, 32, .08)),
-        url("../../elements/company-building-2d.png");
+        url("../../asset/Slide1Use/company-building-2d.png");
       background-size: cover;
       background-position: 50% 50%;
       opacity: var(--color-opacity, 0);
@@ -609,23 +619,23 @@
           <div class="belt-cable-segment"></div>
         </div>
 
-        <article class="card" tabindex="0">
-          <img class="cargo-img" src="../../elements/hanging-container-blue-clean.png" alt="">
-          <img class="cargo-open-door" src="../../elements/hanging-container-left-door-open-outer-panel.png" alt="">
+        <article class="card" tabindex="0" aria-expanded="false">
+          <img class="cargo-img" src="../../asset/Slide1Use/hanging-container-blue-clean.png" alt="">
+          <img class="cargo-open-door" src="../../asset/Slide1Use/hanging-container-left-door-open-outer-panel.png" alt="">
           <div class="cargo-title">Company Base</div>
           <div class="cargo-detail">Marine works, diving services, and underwater operations.</div>
         </article>
 
-        <article class="card" tabindex="0">
-          <img class="cargo-img" src="../../elements/hanging-container-blue-clean.png" alt="">
-          <img class="cargo-open-door" src="../../elements/hanging-container-left-door-open-outer-panel.png" alt="">
+        <article class="card" tabindex="0" aria-expanded="false">
+          <img class="cargo-img" src="../../asset/Slide1Use/hanging-container-blue-clean.png" alt="">
+          <img class="cargo-open-door" src="../../asset/Slide1Use/hanging-container-left-door-open-outer-panel.png" alt="">
           <div class="cargo-title">Task Environment</div>
           <div class="cargo-detail">Records, reports, job evidence, and repeated admin handling.</div>
         </article>
 
-        <article class="card" tabindex="0">
-          <img class="cargo-img" src="../../elements/hanging-container-blue-clean.png" alt="">
-          <img class="cargo-open-door" src="../../elements/hanging-container-left-door-open-outer-panel.png" alt="">
+        <article class="card" tabindex="0" aria-expanded="false">
+          <img class="cargo-img" src="../../asset/Slide1Use/hanging-container-blue-clean.png" alt="">
+          <img class="cargo-open-door" src="../../asset/Slide1Use/hanging-container-left-door-open-outer-panel.png" alt="">
           <div class="cargo-title">AI Search</div>
           <div class="cargo-detail">OCR, automation, and workflow tools explored during internship.</div>
         </article>
@@ -636,7 +646,7 @@
   <div class="hook-drop-layer" aria-hidden="true">
     <div class="hook-drop-rig">
       <div class="hook-drop-cables"></div>
-      <img class="hook-drop-img" src="../../elements/hookpng-cutout.png" alt="">
+      <img class="hook-drop-img" src="../../asset/Slide1Use/hookpng-cutout.png" alt="">
     </div>
   </div>
 
@@ -720,6 +730,9 @@
   </div>
 
   <script>
+    document.addEventListener("selectstart", (event) => event.preventDefault());
+    document.addEventListener("dragstart", (event) => event.preventDefault());
+
     const root = document.documentElement;
     const cards = [...document.querySelectorAll(".card")];
     const chainZone = document.querySelector(".chain-zone");
@@ -1402,8 +1415,10 @@
         const active = card === activeCard && bestDistance < itemHeight * 0.45;
         card.classList.toggle("is-active", active);
         card.setAttribute("aria-hidden", active ? "false" : "true");
-        if (!active) {
-          card.classList.remove("is-open");
+        const cardRect = card.getBoundingClientRect();
+        const fullyOutsideView = cardRect.bottom < -40 || cardRect.top > window.innerHeight + 40;
+        if (fullyOutsideView) {
+          setCardOpen(card, false);
         }
       });
     }
@@ -1414,12 +1429,18 @@
       applyScrollProgress(renderedProgress);
     }
 
+    function setCardOpen(card, open) {
+      card.classList.toggle("is-open", open);
+      card.setAttribute("aria-expanded", open ? "true" : "false");
+    }
+
     cards.forEach((card) => {
       card.addEventListener("click", () => {
+        const shouldOpen = !card.classList.contains("is-open");
         cards.forEach((item) => {
-          if (item !== card) item.classList.remove("is-open");
+          if (item !== card) setCardOpen(item, false);
         });
-        card.classList.toggle("is-open");
+        setCardOpen(card, shouldOpen);
       });
 
       card.addEventListener("keydown", (event) => {

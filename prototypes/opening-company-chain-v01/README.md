@@ -8,12 +8,12 @@ Scope:
 - Adds a post-intro hook drop before the page becomes scroll-ready.
 - Keeps the left building and logo area free from text.
 - Does not touch the current deck or old slide worktrees.
-- Shared/generated image assets are stored in `presentation\elements`, not inside this prototype folder.
+- Shared/generated image assets are stored under `../../asset`, not inside this prototype folder.
 
 Open:
 
 ```text
-C:\Users\wlzhe\AI DEV\Ai motion\presentation\prototypes\opening-company-chain-v01\index.html
+.\index.html
 ```
 
 Review target:
