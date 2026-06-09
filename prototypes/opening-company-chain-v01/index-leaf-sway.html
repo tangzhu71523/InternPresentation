@@ -1,0 +1,1412 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Opening Company Chain Prototype - Leaf Sway Test</title>
+  <style>
+    :root {
+      --ink: #081923;
+      --paper: #f7fbff;
+      --sea: #0b5f96;
+      --blue: #0c76c8;
+      --chain: #d8edf7;
+      --accent: #f3b94b;
+      --shadow: 0 24px 80px rgba(5, 22, 36, .22);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html {
+      scroll-behavior: auto;
+      background: #071522;
+      scrollbar-width: none;
+      -ms-overflow-style: none;
+    }
+
+    body {
+      margin: 0;
+      min-height: 520vh;
+      font-family: "Trebuchet MS", "Segoe UI", sans-serif;
+      color: var(--paper);
+      overflow-x: hidden;
+      scrollbar-width: none;
+      -ms-overflow-style: none;
+    }
+
+    html::-webkit-scrollbar,
+    body::-webkit-scrollbar {
+      width: 0;
+      height: 0;
+      display: none;
+    }
+
+    body.intro-lock {
+      overflow: hidden;
+    }
+
+    body:not(.hook-ready) .belt {
+      opacity: 0;
+      visibility: hidden;
+    }
+
+    .stage {
+      position: sticky;
+      top: 0;
+      width: 100vw;
+      height: 100vh;
+      overflow: hidden;
+      background: #0a2033;
+      isolation: isolate;
+    }
+
+    .bg {
+      position: absolute;
+      inset: -3vh -3vw;
+      background-image:
+        linear-gradient(90deg, rgba(2, 18, 32, .08), rgba(2, 18, 32, .08)),
+        url("../../elements/company-building-2d.png");
+      background-size: cover;
+      background-position: 50% 50%;
+      transform: scale(1.015);
+      transition: none;
+      overflow: hidden;
+      z-index: 0;
+    }
+
+    .bg::before,
+    .bg::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background-position: 50% 50%;
+      background-repeat: no-repeat;
+      background-size: cover;
+      pointer-events: none;
+      backface-visibility: hidden;
+      will-change: transform;
+    }
+
+    .bg::before {
+      background-image: url("../../elements/company-building-palm-cutout.png");
+      transform-origin: -2% 64%;
+      animation: palmLeafSway 5.8s cubic-bezier(.45, 0, .35, 1) infinite;
+      z-index: 1;
+    }
+
+    .bg::after {
+      background-image: url("../../elements/company-building-canopy-cutout.png");
+      opacity: .88;
+      transform-origin: 88% 68%;
+      animation: canopyLeafSway 9.5s cubic-bezier(.45, 0, .35, 1) infinite;
+      z-index: 2;
+    }
+
+    @keyframes palmLeafSway {
+      0%, 100% {
+        transform: translate3d(-.4px, .1px, 0) rotate(-.22deg) skewX(-.08deg);
+      }
+      48% {
+        transform: translate3d(1.4px, -.3px, 0) rotate(.34deg) skewX(.12deg);
+      }
+      72% {
+        transform: translate3d(.3px, .1px, 0) rotate(.1deg) skewX(.04deg);
+      }
+    }
+
+    @keyframes canopyLeafSway {
+      0%, 100% {
+        transform: translate3d(-.2px, 0, 0) rotate(-.05deg);
+      }
+      52% {
+        transform: translate3d(.5px, -.1px, 0) rotate(.08deg);
+      }
+    }
+
+    .vignette {
+      position: absolute;
+      inset: 0;
+      background:
+        radial-gradient(circle at 76% 22%, rgba(255, 255, 255, .10), transparent 28%),
+        linear-gradient(90deg, rgba(3, 18, 31, .04) 0%, transparent 50%, rgba(3, 18, 31, .06) 100%),
+        linear-gradient(0deg, rgba(3, 12, 20, .16), transparent 30%);
+      pointer-events: none;
+      z-index: 1;
+    }
+
+    .chain-zone {
+      position: absolute;
+      left: 63.2vw;
+      right: 1.1vw;
+      top: 0;
+      height: 100vh;
+      z-index: 5;
+      overflow: hidden;
+    }
+
+    .belt-cables {
+      --cable-x: 50%;
+      --cable-gap: 26px;
+      position: absolute;
+      inset: 0;
+      left: 0;
+      right: 0;
+      z-index: 0;
+      pointer-events: none;
+      opacity: .88;
+    }
+
+    .belt-cable-segment {
+      --segment-top: 0px;
+      --segment-height: 0px;
+      position: absolute;
+      top: var(--segment-top);
+      left: var(--cable-x);
+      width: 0;
+      height: var(--segment-height);
+    }
+
+    .belt-cable-segment::before,
+    .belt-cable-segment::after {
+      content: "";
+      position: absolute;
+      top: 0;
+      bottom: 0;
+      width: 3px;
+      border-radius: 999px;
+      background:
+        linear-gradient(90deg, rgba(255, 255, 255, .26), transparent 34%),
+        linear-gradient(180deg, rgba(5, 13, 18, .92), rgba(90, 97, 101, .96), rgba(5, 13, 18, .88));
+      box-shadow: 1px 0 0 rgba(255, 255, 255, .16);
+    }
+
+    .belt-cable-segment::before {
+      transform: translateX(calc(var(--cable-gap) / -2));
+    }
+
+    .belt-cable-segment::after {
+      transform: translateX(calc(var(--cable-gap) / 2));
+    }
+
+    .belt {
+      --belt-y: 0px;
+      --item-gap: calc(100vh + 8px);
+      position: absolute;
+      left: 50%;
+      top: 0;
+      width: min(520px, 100%);
+      z-index: 2;
+      display: grid;
+      gap: var(--item-gap);
+      transform: translate3d(-50%, var(--belt-y), 0);
+      will-change: transform;
+      isolation: isolate;
+    }
+
+    .hook-drop-layer {
+      --hook-width: 48px;
+      --cable-gap: 26px;
+      position: absolute;
+      inset: 0;
+      z-index: 4;
+      opacity: 0;
+      pointer-events: none;
+      will-change: opacity;
+    }
+
+    .hook-drop-layer.is-dropping {
+      opacity: 1;
+    }
+
+    .hook-drop-layer.is-hidden {
+      opacity: 0;
+      visibility: hidden;
+    }
+
+    .hook-drop-rig {
+      position: absolute;
+      left: 50%;
+      top: 0;
+      width: 0;
+      transform: translate3d(-50%, -44vh, 0);
+      animation: none;
+      will-change: transform;
+    }
+
+    .hook-drop-layer.is-dropping .hook-drop-rig {
+      animation: hookDrop 2600ms linear forwards;
+    }
+
+    .hook-drop-cables {
+      position: absolute;
+      left: 0;
+      bottom: calc(100% - 12vh);
+      width: 0;
+      height: 118vh;
+    }
+
+    .hook-drop-cables::before,
+    .hook-drop-cables::after {
+      content: "";
+      position: absolute;
+      top: 0;
+      bottom: 0;
+      width: 3px;
+      border-radius: 999px;
+      background:
+        linear-gradient(90deg, rgba(255, 255, 255, .26), transparent 34%),
+        linear-gradient(180deg, rgba(5, 13, 18, .92), rgba(90, 97, 101, .96), rgba(5, 13, 18, .88));
+      box-shadow: 1px 0 0 rgba(255, 255, 255, .16);
+    }
+
+    .hook-drop-cables::before {
+      transform: translateX(calc(var(--cable-gap) / -2));
+    }
+
+    .hook-drop-cables::after {
+      transform: translateX(calc(var(--cable-gap) / 2));
+    }
+
+    .hook-drop-img {
+      position: absolute;
+      left: 0;
+      top: 12vh;
+      width: var(--hook-width);
+      height: auto;
+      transform: translateX(-50%);
+      filter: drop-shadow(0 14px 20px rgba(2, 16, 27, .28));
+    }
+
+    @keyframes hookDrop {
+      0% {
+        transform: translate3d(-50%, -44vh, 0);
+      }
+      100% {
+        transform: translate3d(-50%, 108vh, 0);
+      }
+    }
+
+    .card {
+      --focus: 0;
+      --open: 0;
+      position: relative;
+      width: 100%;
+      aspect-ratio: 1190 / 866;
+      opacity: 1;
+      cursor: pointer;
+      pointer-events: none;
+      z-index: 2;
+    }
+
+    .card.is-active {
+      pointer-events: auto;
+    }
+
+    .card:focus-visible {
+      outline: 3px solid rgba(255, 255, 255, .86);
+      outline-offset: 5px;
+    }
+
+    .cargo-img {
+      width: 100%;
+      height: 100%;
+      position: absolute;
+      inset: 0;
+      display: block;
+      object-fit: contain;
+      pointer-events: none;
+    }
+
+    .cargo-title {
+      position: absolute;
+      left: 50%;
+      top: 68%;
+      width: 66%;
+      color: rgba(244, 252, 255, .96);
+      font-size: clamp(38px, 4vw, 60px);
+      font-weight: 900;
+      line-height: .9;
+      letter-spacing: 0;
+      text-align: center;
+      text-transform: uppercase;
+      text-wrap: balance;
+      opacity: .96;
+      transform: translate3d(-50%, -50%, 0) rotate(-1.4deg);
+      filter: url("#rough-paint");
+      mix-blend-mode: screen;
+      text-shadow:
+        0 1px 0 rgba(255, 255, 255, .16),
+        0 -1px 0 rgba(1, 28, 63, .32),
+        0 5px 10px rgba(2, 21, 38, .22);
+      pointer-events: none;
+    }
+
+    .cargo-door {
+      position: absolute;
+      right: 8%;
+      bottom: 8.8%;
+      width: 29%;
+      height: 36%;
+      border-left: 2px solid rgba(10, 48, 104, .68);
+      background: linear-gradient(90deg, rgba(22, 83, 170, .34), rgba(9, 44, 111, .7));
+      transform-origin: left center;
+      transform: perspective(650px) rotateY(calc(var(--open) * -64deg));
+      opacity: 0;
+      transition: transform 360ms cubic-bezier(.22, .8, .18, 1), opacity 220ms ease;
+      pointer-events: none;
+    }
+
+    .card.is-open {
+      --open: 1;
+    }
+
+    .card.is-open .cargo-door {
+      opacity: .92;
+    }
+
+    .cargo-detail {
+      position: absolute;
+      right: 8%;
+      bottom: 24%;
+      width: 39%;
+      min-height: 70px;
+      padding: 13px 15px;
+      border: 1px solid rgba(255, 255, 255, .52);
+      border-radius: 6px;
+      background: rgba(248, 252, 255, .92);
+      color: #0b2235;
+      font-size: 13px;
+      font-weight: 800;
+      line-height: 1.28;
+      box-shadow: 0 18px 34px rgba(3, 18, 31, .22);
+      transform: translate3d(18px, 0, 0) scale(.94);
+      opacity: 0;
+      transition: opacity 240ms ease, transform 360ms cubic-bezier(.22, .8, .18, 1);
+      pointer-events: none;
+    }
+
+    .card.is-open .cargo-detail {
+      opacity: 1;
+      transform: translate3d(0, 0, 0) scale(1);
+    }
+
+    .intro {
+      position: fixed;
+      inset: 0;
+      z-index: 30;
+      display: grid;
+      place-items: center;
+      overflow: hidden;
+      background: #000;
+      pointer-events: none;
+      animation: introLeave 980ms cubic-bezier(.22, .8, .18, 1) var(--intro-exit-delay, 8410ms) forwards;
+    }
+
+    .loader-core {
+      position: relative;
+      z-index: 4;
+      width: min(620px, 76vw);
+      display: grid;
+      gap: 22px;
+      place-items: center;
+    }
+
+    .logo-stage {
+      position: relative;
+      width: min(360px, 58vw);
+      aspect-ratio: 598 / 184;
+      filter: drop-shadow(0 0 30px rgba(0, 122, 204, .22));
+    }
+
+    .logo-ghost-img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      opacity: .17;
+      filter: grayscale(1) brightness(1.9);
+    }
+
+    .logo-reveal {
+      position: absolute;
+      inset: 0;
+      overflow: hidden;
+    }
+
+    .logo-liquid-svg {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      display: block;
+    }
+
+    .wire-scene {
+      position: absolute;
+      inset: 0;
+      z-index: 2;
+      overflow: hidden;
+      opacity: 0;
+      background:
+        radial-gradient(circle at 52% 44%, rgba(102, 197, 255, .22), transparent 31%),
+        repeating-linear-gradient(0deg, rgba(255, 255, 255, .055) 0 1px, transparent 1px 24px),
+        repeating-linear-gradient(90deg, rgba(255, 255, 255, .055) 0 1px, transparent 1px 24px),
+        repeating-linear-gradient(0deg, rgba(167, 226, 255, .12) 0 1px, transparent 1px 96px),
+        repeating-linear-gradient(90deg, rgba(167, 226, 255, .12) 0 1px, transparent 1px 96px),
+        linear-gradient(180deg, #074b75 0%, #052d4f 100%);
+    }
+
+    .wire-photo {
+      position: absolute;
+      inset: -3vh -3vw;
+      z-index: 1;
+      background-image: url("../../elements/company_building_no_shadow.png");
+      background-size: cover;
+      background-position: 50% 50%;
+      opacity: .11;
+      filter: grayscale(1) contrast(1.08) brightness(.96) sepia(.35) hue-rotate(158deg) saturate(2.2);
+      mix-blend-mode: screen;
+      transform: scale(1.015);
+      animation: wirePhotoGain 1900ms ease-out 5050ms forwards;
+    }
+
+    .wire-blueprint {
+      position: absolute;
+      inset: -3vh -3vw;
+      z-index: 4;
+      width: calc(100% + 6vw);
+      height: calc(100% + 6vh);
+      display: block;
+      transform: scale(1.015);
+      transform-origin: center;
+      opacity: .98;
+      filter: drop-shadow(0 0 4px rgba(170, 230, 255, .62));
+      will-change: transform, filter;
+    }
+
+    .blueprint-line,
+    .blueprint-detail,
+    .blueprint-micro {
+      fill: none;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+      vector-effect: non-scaling-stroke;
+      pathLength: 1;
+      stroke-dasharray: 1;
+      stroke-dashoffset: calc(1 - var(--draw, 0));
+      opacity: var(--line-opacity, var(--draw, 0));
+    }
+
+    .blueprint-line {
+      stroke: rgba(226, 248, 255, .92);
+      stroke-width: 2.1;
+    }
+
+    .blueprint-detail {
+      stroke: rgba(189, 234, 255, .62);
+      stroke-width: 1.2;
+    }
+
+    .blueprint-micro {
+      stroke: rgba(180, 229, 255, .36);
+      stroke-width: .75;
+      stroke-dasharray: .03 .018;
+    }
+
+    .wire-color-reveal {
+      position: absolute;
+      inset: -3vh -3vw;
+      z-index: 3;
+      background-image:
+        linear-gradient(90deg, rgba(2, 18, 32, .08), rgba(2, 18, 32, .08)),
+        url("../../elements/company-building-2d.png");
+      background-size: cover;
+      background-position: 50% 50%;
+      opacity: var(--color-opacity, 0);
+      clip-path: none;
+      filter: none;
+      transform: scale(1.015);
+      transform-origin: center;
+      will-change: opacity, transform, filter;
+    }
+
+    .wire-glow {
+      position: absolute;
+      inset: 0;
+      z-index: 6;
+      background:
+        radial-gradient(circle at 34% 43%, rgba(246, 252, 255, .5), transparent 18%),
+        radial-gradient(circle at 54% 58%, rgba(210, 230, 255, .28), transparent 26%),
+        linear-gradient(90deg, rgba(226, 236, 248, .12), transparent 46%, rgba(255, 255, 255, .12));
+      opacity: 0;
+      animation: wirePulse 2500ms ease-in-out 4800ms infinite alternate;
+    }
+
+    .wire-network {
+      position: absolute;
+      inset: 0;
+      z-index: 8;
+      width: 100%;
+      height: 100%;
+      display: block;
+    }
+
+    .intro.wire-forced .loader-core {
+      display: none;
+    }
+
+    .intro.wire-started .loader-core {
+      opacity: 0;
+      transition: opacity 520ms ease;
+    }
+
+    .intro.wire-started .wire-scene {
+      opacity: 1;
+      transition: opacity 520ms ease;
+    }
+
+    .intro.wire-forced .wire-scene,
+    .intro.wire-forced .wire-photo {
+      opacity: 1;
+      animation: none;
+    }
+
+    .intro.wire-forced .wire-photo {
+      opacity: .18;
+    }
+
+    @keyframes introLeave {
+      to { opacity: 0; visibility: hidden; }
+    }
+
+    @keyframes wirePhotoGain {
+      from { opacity: .06; filter: grayscale(1) contrast(.82) brightness(.8) sepia(.35) hue-rotate(158deg) saturate(1.6); }
+      to { opacity: .18; filter: grayscale(1) contrast(1.08) brightness(.96) sepia(.35) hue-rotate(158deg) saturate(2.2); }
+    }
+
+    @keyframes wirePulse {
+      from { opacity: .28; transform: scale(1); }
+      to { opacity: .55; transform: scale(1.04); }
+    }
+
+    @media (max-width: 820px) {
+      body {
+        min-height: 560vh;
+      }
+
+      .bg {
+        inset: -2vh -42vw;
+        background-position: 35% 50%;
+      }
+
+      .bg::before,
+      .bg::after {
+        background-position: 35% 50%;
+      }
+
+      .chapter {
+        width: auto;
+        max-width: 78vw;
+        left: 18px;
+        right: 18px;
+      }
+
+      .chain-zone {
+        top: 19vh;
+        left: 12px;
+        right: 12px;
+        width: auto;
+        height: 76vh;
+      }
+
+      .card {
+        width: 100%;
+      }
+
+      .belt {
+        width: min(520px, 112vw);
+      }
+
+      .cargo-title {
+        top: 68%;
+        width: 66%;
+        font-size: clamp(22px, 7.8vw, 46px);
+      }
+
+      .cargo-detail {
+        bottom: 24%;
+        width: 45%;
+        font-size: 12px;
+        padding: 10px 11px;
+      }
+
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .bg::before,
+      .bg::after {
+        animation: none;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="stage" aria-label="Opening company base scroll prototype">
+    <div class="bg"></div>
+    <div class="vignette"></div>
+
+    <section class="chain-zone" aria-label="Company origin container scroll">
+      <div class="hook-drop-layer" aria-hidden="true">
+        <div class="hook-drop-rig">
+          <div class="hook-drop-cables"></div>
+          <img class="hook-drop-img" src="../../elements/hookpng-cutout.png" alt="">
+        </div>
+      </div>
+
+      <div class="belt">
+        <div class="belt-cables" aria-hidden="true">
+          <div class="belt-cable-segment"></div>
+          <div class="belt-cable-segment"></div>
+          <div class="belt-cable-segment"></div>
+        </div>
+
+        <article class="card" tabindex="0">
+          <img class="cargo-img" src="../../elements/hanging-container-blue-clean.png" alt="">
+          <div class="cargo-title">Company Base</div>
+          <div class="cargo-door"></div>
+          <div class="cargo-detail">Marine works, diving services, and underwater operations.</div>
+        </article>
+
+        <article class="card" tabindex="0">
+          <img class="cargo-img" src="../../elements/hanging-container-blue-clean.png" alt="">
+          <div class="cargo-title">Task Environment</div>
+          <div class="cargo-door"></div>
+          <div class="cargo-detail">Records, reports, job evidence, and repeated admin handling.</div>
+        </article>
+
+        <article class="card" tabindex="0">
+          <img class="cargo-img" src="../../elements/hanging-container-blue-clean.png" alt="">
+          <div class="cargo-title">AI Search</div>
+          <div class="cargo-door"></div>
+          <div class="cargo-detail">OCR, automation, and workflow tools explored during internship.</div>
+        </article>
+      </div>
+    </section>
+  </main>
+
+  <svg width="0" height="0" aria-hidden="true" focusable="false">
+    <filter id="rough-paint" x="-8%" y="-20%" width="116%" height="140%" color-interpolation-filters="sRGB">
+      <feTurbulence type="fractalNoise" baseFrequency="0.052" numOctaves="3" seed="12" result="paintNoise"></feTurbulence>
+      <feDisplacementMap in="SourceGraphic" in2="paintNoise" scale="2.8" xChannelSelector="R" yChannelSelector="G"></feDisplacementMap>
+    </filter>
+  </svg>
+
+  <div class="intro" aria-hidden="true">
+    <div class="wire-scene">
+      <div class="wire-photo"></div>
+      <svg class="wire-blueprint" viewBox="0 0 1672 941" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+        <g>
+          <path class="blueprint-line" data-delay="0.04" data-span="0.20" pathLength="1" d="M34 145 L1066 58 L1088 162 L1002 206 L39 215 Z" />
+          <path class="blueprint-line" data-delay="0.08" data-span="0.22" pathLength="1" d="M39 215 L39 681 L950 681 L950 206" />
+          <path class="blueprint-detail" data-delay="0.11" data-span="0.20" pathLength="1" d="M67 178 L999 151" />
+          <path class="blueprint-detail" data-delay="0.14" data-span="0.20" pathLength="1" d="M1002 206 L1058 162 L1088 162" />
+          <path class="blueprint-micro" data-delay="0.15" data-span="0.18" pathLength="1" d="M121 138 L121 212 M242 127 L242 207 M362 117 L362 203 M486 106 L486 199 M610 96 L610 196 M735 85 L735 192 M858 74 L858 188 M984 64 L984 182" />
+
+          <path class="blueprint-line" data-delay="0.17" data-span="0.22" pathLength="1" d="M245 252 L603 248 L603 437 L244 438 Z" />
+          <path class="blueprint-detail" data-delay="0.20" data-span="0.18" pathLength="1" d="M323 251 L323 438 M421 250 L421 438 M245 330 L603 329" />
+          <path class="blueprint-micro" data-delay="0.22" data-span="0.18" pathLength="1" d="M282 252 L282 437 M300 252 L300 437 M345 251 L345 437 M366 251 L366 437 M444 250 L444 437 M462 250 L462 437 M482 250 L482 437 M502 250 L502 437 M522 249 L522 437 M542 249 L542 437 M562 249 L562 437 M582 249 L582 437" />
+          <path class="blueprint-line" data-delay="0.22" data-span="0.20" pathLength="1" d="M778 246 L957 236 L957 436 L778 436 Z" />
+          <path class="blueprint-detail" data-delay="0.25" data-span="0.18" pathLength="1" d="M836 242 L836 436 M778 330 L957 330 M836 376 L957 376" />
+          <path class="blueprint-micro" data-delay="0.27" data-span="0.18" pathLength="1" d="M852 242 L852 436 M868 241 L868 436 M884 240 L884 436 M900 239 L900 436 M916 238 L916 436 M932 237 L932 436" />
+
+          <path class="blueprint-detail" data-delay="0.28" data-span="0.20" pathLength="1" d="M243 457 L813 455 L813 493 L244 495 Z" />
+          <path class="blueprint-line" data-delay="0.30" data-span="0.23" pathLength="1" d="M250 493 L810 489 L823 537 L232 540 Z" />
+          <path class="blueprint-detail" data-delay="0.34" data-span="0.18" pathLength="1" d="M285 538 L338 489 M413 537 L463 488 M542 536 L590 488 M676 535 L721 489" />
+          <path class="blueprint-micro" data-delay="0.36" data-span="0.18" pathLength="1" d="M270 493 L316 537 M356 492 L399 537 M468 491 L510 536 M612 490 L650 535 M742 489 L778 534" />
+
+          <path class="blueprint-line" data-delay="0.37" data-span="0.22" pathLength="1" d="M562 583 L737 582 L737 793 L562 793 Z" />
+          <path class="blueprint-detail" data-delay="0.40" data-span="0.18" pathLength="1" d="M562 680 L737 680 M650 583 L650 793" />
+          <path class="blueprint-micro" data-delay="0.41" data-span="0.18" pathLength="1" d="M584 583 L584 793 M606 583 L606 793 M628 583 L628 793 M672 583 L672 793 M694 583 L694 793 M716 583 L716 793 M562 624 L737 624 M562 720 L737 720 M562 760 L737 760" />
+          <path class="blueprint-line" data-delay="0.42" data-span="0.20" pathLength="1" d="M784 565 L841 565 L841 792 L784 792 Z" />
+          <path class="blueprint-detail" data-delay="0.44" data-span="0.18" pathLength="1" d="M794 596 L831 596 M794 628 L831 628 M794 660 L831 660 M794 692 L831 692 M794 724 L831 724" />
+          <path class="blueprint-micro" data-delay="0.46" data-span="0.18" pathLength="1" d="M804 565 L804 792 M819 565 L819 792 M784 756 L841 756" />
+
+          <path class="blueprint-line" data-delay="0.46" data-span="0.22" pathLength="1" d="M0 623 L365 623 L365 682 L811 682 L811 842 L0 842" />
+          <path class="blueprint-detail" data-delay="0.49" data-span="0.22" pathLength="1" d="M0 842 L1672 870" />
+          <path class="blueprint-line" data-delay="0.51" data-span="0.24" pathLength="1" d="M930 622 L1660 621 L1660 829 L929 828 Z" />
+          <path class="blueprint-detail" data-delay="0.54" data-span="0.22" pathLength="1" d="M985 621 L985 827 M1117 622 L1117 828 M1248 622 L1248 828 M1380 622 L1380 829 M1512 622 L1512 829" />
+          <path class="blueprint-detail" data-delay="0.57" data-span="0.18" pathLength="1" d="M930 678 L1660 678 M930 733 L1660 733 M930 788 L1660 788" />
+          <path class="blueprint-micro" data-delay="0.59" data-span="0.22" pathLength="1" d="M932 650 L1660 650 M930 705 L1660 705 M930 761 L1660 761 M950 621 L984 651 M1000 621 L1034 651 M1068 621 L1102 651 M1140 622 L1174 652 M1210 622 L1244 652 M1284 622 L1318 652 M1356 622 L1390 652 M1428 622 L1462 652 M1500 622 L1534 652 M1572 622 L1606 652" />
+
+          <path class="blueprint-detail" data-delay="0.61" data-span="0.22" pathLength="1" d="M484 188 L524 149 L548 180 L507 220 Z M532 189 L571 151 L595 179 L555 219 Z M457 218 L501 176 M559 237 L604 194" />
+          <path class="blueprint-detail" data-delay="0.63" data-span="0.18" pathLength="1" d="M608 223 L900 224" />
+          <path class="blueprint-micro" data-delay="0.65" data-span="0.18" pathLength="1" d="M12 303 C54 320 84 353 104 397 C73 392 35 397 2 412 M36 315 C29 388 17 477 0 560 M78 354 C60 425 46 500 35 590 M112 394 C86 456 72 532 66 624" />
+          <path class="blueprint-micro" data-delay="0.67" data-span="0.20" pathLength="1" d="M970 590 C1022 535 1082 534 1130 588 M1008 565 C1048 527 1098 534 1140 585 M1184 618 C1238 548 1328 552 1390 615 M1240 585 C1286 548 1358 558 1404 613 M1434 607 C1485 552 1556 555 1610 611" />
+          <path class="blueprint-micro" data-delay="0.69" data-span="0.18" pathLength="1" d="M870 690 L900 668 L930 688 M870 730 L900 708 L930 728 M870 770 L900 748 L930 768 M1165 614 L1165 828 M1270 614 L1270 828 M1376 614 L1376 828 M1484 614 L1484 828 M1590 614 L1590 828" />
+
+        </g>
+      </svg>
+      <div class="wire-color-reveal"></div>
+      <div class="wire-glow"></div>
+      <canvas class="wire-network" id="wire-network"></canvas>
+    </div>
+    <div class="loader-core">
+      <div class="logo-stage">
+        <svg class="logo-ghost-img" viewBox="0 0 598 184" preserveAspectRatio="xMidYMid meet" aria-label="Internship Presentation">
+          <text x="299" y="86" text-anchor="middle" fill="#d7f4ff" font-family="Arial, sans-serif" font-size="46" font-weight="800">INTERNSHIP</text>
+          <text x="299" y="134" text-anchor="middle" fill="#d7f4ff" font-family="Arial, sans-serif" font-size="38" font-weight="700">PRESENTATION</text>
+        </svg>
+        <div class="logo-reveal" aria-hidden="true">
+          <svg class="logo-liquid-svg" viewBox="0 0 598 184" preserveAspectRatio="xMidYMid meet">
+            <defs>
+              <clipPath id="logo-liquid-clip">
+                <path id="logo-liquid-path" d="M0 210 L598 210 L598 184 L0 184 Z"></path>
+              </clipPath>
+            </defs>
+            <g clip-path="url(#logo-liquid-clip)">
+              <text x="299" y="86" text-anchor="middle" fill="#ffffff" font-family="Arial, sans-serif" font-size="46" font-weight="800">INTERNSHIP</text>
+              <text x="299" y="134" text-anchor="middle" fill="#ffffff" font-family="Arial, sans-serif" font-size="38" font-weight="700">PRESENTATION</text>
+            </g>
+          </svg>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const root = document.documentElement;
+    const cards = [...document.querySelectorAll(".card")];
+    const chainZone = document.querySelector(".chain-zone");
+    const belt = document.querySelector(".belt");
+    const cableSegments = [...document.querySelectorAll(".belt-cable-segment")];
+    const hookDropLayer = document.querySelector(".hook-drop-layer");
+    const intro = document.querySelector(".intro");
+    const liquidPath = document.getElementById("logo-liquid-path");
+    const wireCanvas = document.getElementById("wire-network");
+    const wireCtx = wireCanvas ? wireCanvas.getContext("2d") : null;
+    const blueprintLines = [...document.querySelectorAll(".blueprint-line, .blueprint-detail, .blueprint-micro")];
+    const hookWidthRatio = 0.092;
+    const snapLiftPx = 90;
+    const totalSnapMoveDuration = 6780;
+
+    function clamp(value, min, max) {
+      return Math.min(Math.max(value, min), max);
+    }
+
+    function syncHookDropSize() {
+      if (!hookDropLayer || !belt) return;
+      const beltWidth = belt.clientWidth || 520;
+      const hookWidth = clamp(beltWidth * hookWidthRatio, 40, 50);
+      hookDropLayer.style.setProperty("--hook-width", `${hookWidth.toFixed(2)}px`);
+    }
+
+    function smoothstep(edge0, edge1, value) {
+      const x = clamp((value - edge0) / (edge1 - edge0), 0, 1);
+      return x * x * (3 - 2 * x);
+    }
+
+    const params = new URLSearchParams(window.location.search);
+    const forcedProgress = params.get("p");
+    const forcedLiquid = params.get("liquid");
+    const forcedWire = params.get("wire");
+    const skipIntro = params.get("intro") === "0";
+    const forceHookDrop = params.get("hook") === "1";
+    const logoLiquidDuration = 4550;
+    const wireStartDelay = logoLiquidDuration - 500;
+    const wireNetworkDuration = 4850;
+    const introExitDelay = wireStartDelay + wireNetworkDuration;
+    const wireColorReadyDelay = introExitDelay - 940;
+    intro.style.setProperty("--intro-exit-delay", `${introExitDelay}ms`);
+    let targetProgress = 0;
+    let renderedProgress = 0;
+    let rafId = 0;
+    const snapState = {
+      index: -1,
+      locked: false,
+      timer: 0,
+      raf: 0
+    };
+
+    function resetPageScroll() {
+      if (forcedProgress !== null) return;
+      snapState.index = -1;
+      snapState.locked = false;
+      window.clearTimeout(snapState.timer);
+      window.cancelAnimationFrame(snapState.raf);
+      root.style.scrollBehavior = "auto";
+      window.scrollTo(0, 0);
+      window.requestAnimationFrame(() => {
+        root.style.scrollBehavior = "";
+      });
+    }
+
+    if (forcedProgress === null) {
+      if ("scrollRestoration" in history) {
+        history.scrollRestoration = "manual";
+      }
+      resetPageScroll();
+      window.addEventListener("pageshow", () => {
+        resetPageScroll();
+        targetProgress = 0;
+        renderedProgress = 0;
+        update();
+      });
+    }
+
+    function easeOutCubic(value) {
+      return 1 - Math.pow(1 - value, 3);
+    }
+
+    function liquidShape(level, phase) {
+      const width = 598;
+      const height = 184;
+      const base = height + 26 - (height + 38) * level;
+      const amp = 7.5;
+      const wave = 150;
+      let d = `M0 ${base.toFixed(2)}`;
+
+      for (let x = 0; x <= width; x += 36) {
+        const y = base + Math.sin((x / wave) * Math.PI * 2 + phase) * amp;
+        const midX = x + 18;
+        const midY = base + Math.sin(((x + 18) / wave) * Math.PI * 2 + phase) * amp;
+        d += ` Q${midX.toFixed(2)} ${midY.toFixed(2)} ${Math.min(x + 36, width).toFixed(2)} ${y.toFixed(2)}`;
+      }
+
+      return `${d} L${width} ${height + 22} L0 ${height + 22} Z`;
+    }
+
+    function animateLogoLiquid() {
+      if (!liquidPath) return;
+      const startedAt = performance.now();
+      const duration = logoLiquidDuration;
+
+      function tick(now) {
+        const raw = clamp((now - startedAt) / duration, 0, 1);
+        const level = easeOutCubic(raw);
+        const phase = raw * Math.PI * 5.2;
+        liquidPath.setAttribute("d", liquidShape(level, phase));
+        if (raw < 1 && document.body.classList.contains("intro-lock")) {
+          requestAnimationFrame(tick);
+        }
+      }
+
+      requestAnimationFrame(tick);
+    }
+
+    let wirePoints = [];
+    let wireFragments = [];
+
+    function seeded(index) {
+      const value = Math.sin(index * 127.1 + 31.7) * 43758.5453;
+      return value - Math.floor(value);
+    }
+
+    function makeWirePoints() {
+      const points = [];
+      for (let i = 0; i < 66; i += 1) {
+        points.push({
+          x: seeded(i) * 1.12 - 0.06,
+          y: seeded(i + 99) * 1.12 - 0.06,
+          r: seeded(i + 199)
+        });
+      }
+      return points;
+    }
+
+    function makeWireFragments() {
+      const fragments = [];
+      for (let i = 0; i < 24; i += 1) {
+        const centerPull = seeded(i + 510) > 0.72 ? 0.24 : 0;
+        fragments.push({
+          x: seeded(i + 300) * 1.28 - 0.14 + (0.5 - seeded(i + 301)) * centerPull,
+          y: seeded(i + 360) * 1.24 - 0.12 + (0.5 - seeded(i + 361)) * centerPull,
+          size: 0.045 + seeded(i + 420) * 0.105,
+          sides: 3 + Math.floor(seeded(i + 480) * 3),
+          spin: seeded(i + 540) * Math.PI,
+          start: 0.08 + seeded(i + 600) * 0.58,
+          label: String(41 + Math.floor(seeded(i + 660) * 58))
+        });
+      }
+      return fragments;
+    }
+
+    function resizeWireCanvas() {
+      if (!wireCanvas || !wireCtx) return;
+      const dpr = Math.min(window.devicePixelRatio || 1, 2);
+      const width = Math.max(1, Math.floor(window.innerWidth * dpr));
+      const height = Math.max(1, Math.floor(window.innerHeight * dpr));
+      if (wireCanvas.width !== width || wireCanvas.height !== height) {
+        wireCanvas.width = width;
+        wireCanvas.height = height;
+        wireCanvas.style.width = `${window.innerWidth}px`;
+        wireCanvas.style.height = `${window.innerHeight}px`;
+      }
+      wireCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      if (wirePoints.length === 0) {
+        wirePoints = makeWirePoints();
+      }
+      if (wireFragments.length === 0) {
+        wireFragments = makeWireFragments();
+      }
+    }
+
+    function lineProgress(p, start, span) {
+      return smoothstep(start, start + span, p);
+    }
+
+    function drawPartialLine(ctx, ax, ay, bx, by, progress, alpha, width) {
+      if (progress <= 0 || alpha <= 0) return;
+      const eased = easeOutCubic(clamp(progress, 0, 1));
+      const headX = ax + (bx - ax) * eased;
+      const headY = ay + (by - ay) * eased;
+      ctx.lineWidth = width;
+      ctx.strokeStyle = `rgba(248, 252, 255, ${alpha})`;
+      ctx.shadowColor = `rgba(248, 252, 255, ${alpha * .75})`;
+      ctx.shadowBlur = 10 * alpha;
+      ctx.beginPath();
+      ctx.moveTo(ax, ay);
+      ctx.lineTo(headX, headY);
+      ctx.stroke();
+      if (progress > .02 && progress < 1) {
+        ctx.fillStyle = `rgba(255, 255, 255, ${Math.min(alpha + .25, 1)})`;
+        ctx.beginPath();
+        ctx.arc(headX, headY, 2.2 + width, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      ctx.shadowBlur = 0;
+    }
+
+    function drawWireFragment(ctx, fragment, progress, alpha, w, h) {
+      if (progress <= 0 || alpha <= 0) return;
+      const cx = fragment.x * w;
+      const cy = fragment.y * h;
+      const size = fragment.size * Math.min(w, h);
+      const sides = fragment.sides;
+      const points = [];
+      const drift = (1 - progress) * 18;
+
+      for (let i = 0; i < sides; i += 1) {
+        const angle = fragment.spin + i / sides * Math.PI * 2 + progress * 0.14;
+        points.push({
+          x: cx + Math.cos(angle) * size + drift * Math.cos(fragment.spin + i),
+          y: cy + Math.sin(angle) * size + drift * Math.sin(fragment.spin + i)
+        });
+      }
+
+      ctx.lineWidth = 1;
+      ctx.strokeStyle = `rgba(242, 251, 255, ${alpha})`;
+      ctx.shadowColor = `rgba(213, 242, 255, ${alpha * .65})`;
+      ctx.shadowBlur = 8 * alpha;
+
+      for (let i = 0; i < points.length; i += 1) {
+        const a = points[i];
+        const b = points[(i + 1) % points.length];
+        drawPartialLine(ctx, a.x, a.y, b.x, b.y, progress, alpha * .72, 1);
+      }
+
+      if (progress > 0.45) {
+        ctx.shadowBlur = 0;
+        ctx.fillStyle = `rgba(247, 252, 255, ${alpha * .55})`;
+        ctx.font = "10px 'Trebuchet MS', sans-serif";
+        ctx.fillText(fragment.label, points[0].x + 5, points[0].y - 5);
+      }
+      ctx.shadowBlur = 0;
+    }
+
+    function updateBlueprint(progress) {
+      const p = clamp(progress, 0, 1);
+      const colorFade = smoothstep(0.68, 0.96, p);
+      const lineFade = smoothstep(0.92, 1.18, p);
+
+      blueprintLines.forEach((line, index) => {
+        const delay = Number(line.dataset.delay || index * 0.012);
+        const span = Number(line.dataset.span || 0.22);
+        const draw = lineProgress(p, delay, span);
+        const isMicro = line.classList.contains("blueprint-micro");
+        const isDetail = line.classList.contains("blueprint-detail");
+        const residue = isMicro ? 0.12 : isDetail ? 0.2 : 0.32;
+        const keep = 1 - lineFade * (1 - residue);
+        const lineOpacity = clamp(draw * keep, 0, 1);
+        line.style.setProperty("--draw", draw.toFixed(4));
+        line.style.setProperty("--line-opacity", lineOpacity.toFixed(4));
+      });
+
+      intro.style.setProperty("--color-opacity", (colorFade * 0.98).toFixed(4));
+    }
+
+    function drawWireScene(progress) {
+      updateBlueprint(progress);
+      if (!wireCanvas || !wireCtx) return;
+      resizeWireCanvas();
+      const ctx = wireCtx;
+      const w = window.innerWidth;
+      const h = window.innerHeight;
+      const p = clamp(progress, 0, 1);
+      const networkHold = 1 - smoothstep(0.90, 1.18, p) * 0.72;
+
+      ctx.clearRect(0, 0, w, h);
+      ctx.globalCompositeOperation = "source-over";
+
+      wireFragments.forEach((fragment) => {
+        const appear = lineProgress(p, fragment.start, .42);
+        const fade = 1 - smoothstep(0.92, 1.18, p) * 0.58;
+        drawWireFragment(
+          ctx,
+          fragment,
+          appear,
+          .2 * appear * fade,
+          w,
+          h
+        );
+      });
+
+      wirePoints.forEach((point, index) => {
+        const px = point.x * w;
+        const py = point.y * h;
+        const appear = lineProgress(p, point.r * .38, .28);
+        if (appear <= 0) return;
+        const pulse = Math.sin(performance.now() * .002 + index) * .5 + .5;
+        ctx.fillStyle = `rgba(255, 255, 255, ${(.12 + pulse * .16) * appear * networkHold})`;
+        ctx.beginPath();
+        ctx.arc(px, py, 1.2 + appear * 1.8, 0, Math.PI * 2);
+        ctx.fill();
+        if (index % 4 === 0) {
+          ctx.font = "10px 'Trebuchet MS', sans-serif";
+          ctx.fillStyle = `rgba(255, 255, 255, ${.24 * appear * networkHold})`;
+          ctx.fillText(String(41 + (index * 7) % 58), px + 6, py - 5);
+        }
+      });
+
+      for (let i = 0; i < wirePoints.length; i += 1) {
+        for (let j = i + 1; j < wirePoints.length; j += 1) {
+          const a = wirePoints[i];
+          const b = wirePoints[j];
+          const dx = (a.x - b.x) * w;
+          const dy = (a.y - b.y) * h;
+          const dist = Math.sqrt(dx * dx + dy * dy);
+          if (dist > Math.min(w, h) * .19) continue;
+          const start = Math.min(a.r, b.r) * .42;
+          const local = lineProgress(p, start, .34);
+          drawPartialLine(
+            ctx,
+            a.x * w,
+            a.y * h,
+            b.x * w,
+            b.y * h,
+            local,
+            .045 * local * networkHold,
+            1
+          );
+        }
+      }
+    }
+
+    function animateWireNetwork() {
+      if (!wireCanvas || !wireCtx) return;
+      const startedAt = performance.now() + wireStartDelay;
+      const duration = wireNetworkDuration;
+
+      function tick(now) {
+        const progress = clamp((now - startedAt) / duration, 0, 1);
+        drawWireScene(progress);
+        if (document.body.classList.contains("intro-lock")) {
+          requestAnimationFrame(tick);
+        }
+      }
+
+      requestAnimationFrame(tick);
+    }
+
+    function finishHookDrop() {
+      document.body.classList.remove("intro-lock");
+      document.body.classList.add("hook-ready");
+      if (hookDropLayer) {
+        hookDropLayer.classList.remove("is-dropping");
+        hookDropLayer.classList.add("is-hidden");
+      }
+      update();
+    }
+
+    function startHookDrop() {
+      if (!hookDropLayer) {
+        finishHookDrop();
+        return;
+      }
+
+      syncHookDropSize();
+      document.body.classList.add("intro-lock");
+      hookDropLayer.classList.remove("is-hidden");
+      hookDropLayer.classList.add("is-dropping");
+      hookDropLayer.addEventListener("animationend", finishHookDrop, { once: true });
+    }
+
+    if (skipIntro) {
+      document.body.classList.add("intro-done");
+      intro.remove();
+      if (forceHookDrop) {
+        startHookDrop();
+      } else {
+        finishHookDrop();
+      }
+    } else if (forcedWire !== null) {
+      document.body.classList.add("intro-lock");
+      intro.classList.add("wire-forced");
+      resizeWireCanvas();
+      drawWireScene(clamp(Number(forcedWire), 0, 1));
+    } else if (forcedLiquid !== null) {
+      document.body.classList.add("intro-lock");
+      if (liquidPath) {
+        const liquid = clamp(Number(forcedLiquid), 0, 1);
+        liquidPath.setAttribute("d", liquidShape(liquid, liquid * Math.PI * 3));
+      }
+    } else {
+      document.body.classList.add("intro-lock");
+      animateLogoLiquid();
+      window.setTimeout(() => {
+        intro.classList.add("wire-started");
+      }, wireStartDelay);
+      animateWireNetwork();
+      window.setTimeout(() => {
+        document.body.classList.add("intro-done");
+        intro.remove();
+        startHookDrop();
+      }, wireColorReadyDelay);
+    }
+
+    function readScrollProgress() {
+      const max = document.body.scrollHeight - window.innerHeight;
+      return forcedProgress !== null
+        ? clamp(Number(forcedProgress), 0, 1)
+        : max > 0 ? clamp(window.scrollY / max, 0, 1) : 0;
+    }
+
+    function getScrollMax() {
+      return Math.max(document.body.scrollHeight - window.innerHeight, 1);
+    }
+
+    function getBeltMetrics() {
+      if (!chainZone || !belt || cards.length === 0) return null;
+
+      const zoneHeight = chainZone.clientHeight;
+      const itemHeight = cards[0].offsetHeight;
+      const gap = cards.length > 1 ? cards[1].offsetTop - cards[0].offsetTop - itemHeight : zoneHeight;
+      const spacing = itemHeight + gap;
+      const focusY = zoneHeight * 0.5 - snapLiftPx;
+      const focusTop = focusY - itemHeight * 0.5;
+      const startY = zoneHeight + itemHeight * 0.12;
+      const exitTravel = focusY + itemHeight * 0.68;
+      const totalTravel = (startY - focusTop) + spacing * Math.max(cards.length - 1, 0) + exitTravel;
+
+      return {
+        zoneHeight,
+        itemHeight,
+        gap,
+        spacing,
+        focusY,
+        focusTop,
+        startY,
+        totalTravel
+      };
+    }
+
+    function getSnapProgresses() {
+      const metrics = getBeltMetrics();
+      if (!metrics) return [];
+
+      const containerSnaps = cards.map((_, index) => {
+        const centeredY = metrics.startY + index * metrics.spacing + metrics.itemHeight * 0.5 - metrics.focusY;
+        return clamp(centeredY / metrics.totalTravel, 0, 1);
+      });
+
+      return [0, ...containerSnaps, 1];
+    }
+
+    function getSnapMoveDuration(fromProgress, toProgress) {
+      return Math.max(480, Math.abs(toProgress - fromProgress) * totalSnapMoveDuration);
+    }
+
+    function scrollToSnap(index, fromProgress = readScrollProgress()) {
+      const snaps = getSnapProgresses();
+      const target = snaps[index];
+      if (target === undefined) return 0;
+
+      const duration = getSnapMoveDuration(fromProgress, target);
+      snapState.index = index;
+      targetProgress = target;
+      animateScrollTo(target * getScrollMax(), duration);
+      update();
+      return duration;
+    }
+
+    function animateScrollTo(targetTop, duration) {
+      const startTop = window.scrollY;
+      const distance = targetTop - startTop;
+      const startedAt = performance.now();
+
+      window.cancelAnimationFrame(snapState.raf);
+
+      function tick(now) {
+        const progress = clamp((now - startedAt) / duration, 0, 1);
+        window.scrollTo(0, startTop + distance * progress);
+        if (progress < 1) {
+          snapState.raf = window.requestAnimationFrame(tick);
+        } else {
+          window.scrollTo(0, targetTop);
+        }
+      }
+
+      snapState.raf = window.requestAnimationFrame(tick);
+    }
+
+    function handleStepScroll(event) {
+      if (forcedProgress !== null) return;
+      if (!document.body.classList.contains("hook-ready")) return;
+      if (document.body.classList.contains("intro-lock")) return;
+      if (Math.abs(event.deltaY) < 4) return;
+
+      const direction = Math.sign(event.deltaY);
+      event.preventDefault();
+      stepToContainer(direction);
+    }
+
+    function stepToContainer(direction) {
+      const snaps = getSnapProgresses();
+      if (snaps.length === 0) return;
+
+      if (snapState.locked) return;
+
+      const current = readScrollProgress();
+      const threshold = 0.025;
+      let nextIndex = snapState.index;
+
+      if (direction > 0) {
+        nextIndex = snaps.findIndex((snap) => snap > current + threshold);
+        if (nextIndex === -1) nextIndex = snaps.length - 1;
+      } else {
+        nextIndex = -1;
+        for (let index = snaps.length - 1; index >= 0; index -= 1) {
+          if (snaps[index] < current - threshold) {
+            nextIndex = index;
+            break;
+          }
+        }
+        if (nextIndex === -1) nextIndex = 0;
+      }
+
+      snapState.locked = true;
+      window.clearTimeout(snapState.timer);
+      const duration = scrollToSnap(nextIndex, current);
+      snapState.timer = window.setTimeout(() => {
+        snapState.locked = false;
+      }, duration + 80);
+    }
+
+    function handleStepKey(event) {
+      if (event.key !== "ArrowDown" && event.key !== "ArrowUp") return;
+      if (forcedProgress !== null) return;
+      if (!document.body.classList.contains("hook-ready")) return;
+      if (document.body.classList.contains("intro-lock")) return;
+
+      event.preventDefault();
+      stepToContainer(event.key === "ArrowDown" ? 1 : -1);
+    }
+
+    function applyScrollProgress(p) {
+      root.style.setProperty("--p", p.toFixed(4));
+
+      if (!chainZone || !belt || cards.length === 0) return;
+
+      const metrics = getBeltMetrics();
+      if (!metrics) return;
+
+      const { zoneHeight, itemHeight, spacing, focusY, startY, totalTravel } = metrics;
+      const beltY = startY - p * totalTravel;
+      let activeCard = null;
+      let bestDistance = Infinity;
+
+      belt.style.setProperty("--belt-y", `${beltY.toFixed(2)}px`);
+
+      const visualBottomRatio = 838 / 866;
+      cableSegments.forEach((segment, index) => {
+        if (index === 0) {
+          const firstHookTop = cards[0].offsetTop;
+          segment.style.setProperty("--segment-top", `${(-zoneHeight * 1.25).toFixed(2)}px`);
+          segment.style.setProperty("--segment-height", `${(zoneHeight * 1.25 + firstHookTop).toFixed(2)}px`);
+          return;
+        }
+
+        const previousCard = cards[index - 1];
+        const currentCard = cards[index];
+        if (!previousCard || !currentCard) {
+          segment.style.setProperty("--segment-height", "0px");
+          return;
+        }
+
+        const previousBottom = previousCard.offsetTop + previousCard.offsetHeight * visualBottomRatio;
+        const currentHookTop = currentCard.offsetTop;
+        const height = Math.max(currentHookTop - previousBottom, 0);
+        segment.style.setProperty("--segment-top", `${previousBottom.toFixed(2)}px`);
+        segment.style.setProperty("--segment-height", `${height.toFixed(2)}px`);
+      });
+
+      cards.forEach((card, index) => {
+        const center = beltY + index * spacing + itemHeight * 0.5;
+        const distance = Math.abs(center - focusY);
+        const focus = 1 - clamp(distance / (itemHeight * 0.68), 0, 1);
+
+        card.style.setProperty("--focus", focus.toFixed(4));
+
+        if (distance < bestDistance) {
+          bestDistance = distance;
+          activeCard = card;
+        }
+      });
+
+      cards.forEach((card) => {
+        const active = card === activeCard && bestDistance < itemHeight * 0.45;
+        card.classList.toggle("is-active", active);
+        card.setAttribute("aria-hidden", active ? "false" : "true");
+        if (!active) {
+          card.classList.remove("is-open");
+        }
+      });
+    }
+
+    function update() {
+      targetProgress = readScrollProgress();
+      renderedProgress = targetProgress;
+      applyScrollProgress(renderedProgress);
+    }
+
+    cards.forEach((card) => {
+      card.addEventListener("click", () => {
+        cards.forEach((item) => {
+          if (item !== card) item.classList.remove("is-open");
+        });
+        card.classList.toggle("is-open");
+      });
+
+      card.addEventListener("keydown", (event) => {
+        if (event.key === "Enter" || event.key === " ") {
+          event.preventDefault();
+          card.click();
+        }
+      });
+    });
+
+    update();
+    window.addEventListener("wheel", handleStepScroll, { passive: false });
+    window.addEventListener("keydown", handleStepKey);
+    window.addEventListener("scroll", update, { passive: true });
+    window.addEventListener("resize", () => {
+      syncHookDropSize();
+      update();
+      if (forcedWire !== null) {
+        drawWireScene(clamp(Number(forcedWire), 0, 1));
+      }
+    });
+    window.addEventListener("load", update);
+  </script>
+</body>
+</html>
